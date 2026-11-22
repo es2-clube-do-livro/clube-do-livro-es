@@ -1,0 +1,6 @@
+# LF em todo checkout, inclusive no Windows: o Prettier confere o fim de linha.
+* text=auto eol=lf
+package-lock.json linguist-generated=true
+*.png binary
+*.jpg binary
+*.ico binary
