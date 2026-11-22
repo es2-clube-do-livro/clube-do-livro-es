@@ -1,0 +1,43 @@
+# Checagens em todo push, em qualquer branch, no Linux, no macOS e no Windows.
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Os hooks do Git servem só para os commits feitos nas máquinas do grupo.
+  HUSKY: 0
+
+jobs:
+  testes:
+    name: Testes (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      # Estes passos passam a valer quando os scripts existirem no package.json.
+      - run: npm run lint --if-present
+      - run: npm run format:check --if-present
+      - run: npm test --if-present
+      - run: npm run build
