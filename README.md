@@ -7,9 +7,9 @@ Trabalho prático de Engenharia de Software 2.
 
 ## Integrantes
 
-- (seu nome completo)
-- Vitor (sobrenome)
-- Alvaro (sobrenome)
+- Eduardo Assis Tomich
+- Alvaro Candido de Oliveira Neto
+- Lucas Vitor da Silva Ramos
 
 ## Sobre o sistema
 
