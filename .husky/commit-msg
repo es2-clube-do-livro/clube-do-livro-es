@@ -1,0 +1,7 @@
+npx --no -- commitlint --edit "$1"
+
+# Cada commit é de quem o fez: o projeto não usa linhas Co-Authored-By.
+if grep -qiE '^co-authored-by:' "$1"; then
+  echo "Tire a linha Co-Authored-By da mensagem do commit."
+  exit 1
+fi
