@@ -40,4 +40,17 @@ jobs:
       - run: npm run lint --if-present
       - run: npm run format:check --if-present
       - run: npm run test:coverage
+      - name: Publicar resumo da cobertura
+        if: ${{ !cancelled() }}
+        run: |
+          {
+            echo "### Cobertura ($RUNNER_OS)"
+            if [[ ! -s coverage/summary.txt ]]; then
+              echo 'A execução terminou sem gerar o relatório de cobertura.'
+              exit 1
+            fi
+            echo '```text'
+            cat coverage/summary.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
       - run: npm run build
