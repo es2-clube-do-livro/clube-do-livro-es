@@ -39,5 +39,5 @@ jobs:
       # Estes passos passam a valer quando os scripts existirem no package.json.
       - run: npm run lint --if-present
       - run: npm run format:check --if-present
-      - run: npm test --if-present
+      - run: npm run test:coverage
       - run: npm run build
