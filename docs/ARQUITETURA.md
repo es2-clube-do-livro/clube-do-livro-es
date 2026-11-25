@@ -223,8 +223,10 @@ jobs:
 
 - Todo push roda nos 3 sistemas, e o pull request mostra o resultado do último commit.
 - A produção só recebe a `main`, e só depois dos 3 sistemas passarem.
-- O segredo `FIREBASE_SERVICE_ACCOUNT_<ID>` fica nos secrets do repositório. Do Firebase, só o
-  Hosting é usado.
+- No GitHub, a variável de repositório `FIREBASE_PROJECT_ID` define o projeto de produção.
+  O secret `FIREBASE_SERVICE_ACCOUNT_<ID>` contém o JSON da conta de serviço do Hosting.
+  No nome do secret, o ID fica em maiúsculas e cada hífen vira um sublinhado. Do Firebase,
+  só o Hosting é usado.
 
 ## Decisões
 

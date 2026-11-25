@@ -54,3 +54,50 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - run: npm run build
+
+  producao:
+    name: Publicar no Firebase Hosting
+    needs: testes
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency: firebase-hosting-live
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Conferir o commit atual da main
+        id: main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '"sha=" + .object.sha' >> "$GITHUB_OUTPUT"
+
+      - name: Identificar o secret do projeto Firebase
+        id: firebase
+        if: steps.main.outputs.sha == github.sha
+        env:
+          PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          if [[ ! "$PROJECT_ID" =~ ^[a-z][a-z0-9-]{4,28}[a-z0-9]$ ]]; then
+            echo '::error::Configure a variável FIREBASE_PROJECT_ID com o ID do projeto.'
+            exit 1
+          fi
+          echo "secret=FIREBASE_SERVICE_ACCOUNT_${PROJECT_ID^^}" | tr '-' '_' >> "$GITHUB_OUTPUT"
+
+      - name: Publicar o site
+        if: steps.main.outputs.sha == github.sha
+        uses: FirebaseExtended/action-hosting-deploy@500ac625ca2dd40cbd15f7659af953801858032a # v0.11.0
+        with:
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          firebaseServiceAccount: ${{ secrets[steps.firebase.outputs.secret] }}
+          firebaseToolsVersion: 15.37.0
+          channelId: live
