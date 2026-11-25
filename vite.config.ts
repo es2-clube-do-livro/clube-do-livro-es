@@ -5,6 +5,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
+    // O Storage dos testes pertence ao navegador simulado, inclusive no Node 26.
+    execArgv: ['--no-experimental-webstorage'],
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     coverage: {

@@ -6,17 +6,21 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 
 import { App } from './app/App';
-import { ClubProvider } from './app/ClubProvider';
+import { StoredClub } from './features/data/StoredClub';
+import { createLocalStorageRepository } from './storage/local-storage';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Elemento #root não encontrado no index.html.');
 
+const repository = createLocalStorageRepository();
+const initial = repository.load();
+
 createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
-      <ClubProvider>
+      <StoredClub repository={repository} initial={initial}>
         <App />
-      </ClubProvider>
+      </StoredClub>
     </BrowserRouter>
   </StrictMode>,
 );
