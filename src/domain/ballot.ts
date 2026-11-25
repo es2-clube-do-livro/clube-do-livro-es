@@ -1,4 +1,6 @@
-import type { MemberId, NominationId, Round } from './types';
+import { activeRound, replaceRound } from './club';
+import { err, ok, type Result } from './result';
+import type { ClubState, MemberId, NominationId, Results, Round } from './types';
 
 /** Cada pessoa escolhe uma 1ª e uma 2ª opção. */
 export const CHOICES_PER_BALLOT = 2;
@@ -33,4 +35,39 @@ export function validateBallot(
   }
   if (choices.length !== requiredChoices(round, voter)) return 'wrong-count';
   return null;
+}
+
+/** Cada escolha vale um voto; a primeira também conta como voto de 1ª opção. */
+function countBallot(results: Results, choices: readonly NominationId[]): Results {
+  const votes = { ...results.votes };
+  const firsts = { ...results.firsts };
+  for (const choice of choices) votes[choice] = (votes[choice] ?? 0) + 1;
+  const [first] = choices;
+  if (first !== undefined) firsts[first] = (firsts[first] ?? 0) + 1;
+  return { votes, firsts };
+}
+
+export type CastError = BallotError | 'not-voting' | 'unknown-member';
+
+/**
+ * Registra o voto (R8, R9): soma as escolhas e anota que a pessoa votou. O que ela escolheu
+ * não fica guardado em lugar nenhum.
+ */
+export function castBallot(
+  state: ClubState,
+  voter: MemberId,
+  choices: readonly NominationId[],
+): Result<ClubState, CastError> {
+  const round = activeRound(state);
+  if (round?.status !== 'voting') return err('not-voting');
+  if (!state.members.some((member) => member.id === voter)) return err('unknown-member');
+  const problem = validateBallot(round, voter, choices);
+  if (problem) return err(problem);
+  return ok(
+    replaceRound(state, {
+      ...round,
+      voters: [...round.voters, voter],
+      results: countBallot(round.results, choices),
+    }),
+  );
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { aNomination, aRound } from '../test/factories';
-import { eligibleOptions, requiredChoices, validateBallot } from './ballot';
+import { aClub, aMember, aNomination, aRound } from '../test/factories';
+import { castBallot, eligibleOptions, requiredChoices, validateBallot } from './ballot';
 
 const round = aRound({
   status: 'voting',
@@ -10,6 +10,11 @@ const round = aRound({
     aNomination({ id: 'livro-bia', memberId: 'bia' }),
     aNomination({ id: 'livro-caio', memberId: 'caio' }),
   ],
+});
+
+const club = aClub({
+  members: [aMember('Ana'), aMember('Bia'), aMember('Caio')],
+  rounds: [round],
 });
 
 describe('eligibleOptions', () => {
@@ -59,5 +64,60 @@ describe('validateBallot', () => {
     const voted = { ...round, voters: ['ana'] };
 
     expect(validateBallot(voted, 'ana', ['livro-bia', 'livro-caio'])).toBe('already-voted');
+  });
+});
+
+describe('castBallot', () => {
+  it('soma um voto em cada escolha e um de 1ª opção na primeira', () => {
+    const result = castBallot(club, 'ana', ['livro-caio', 'livro-bia']);
+
+    expect(result.ok && result.value.rounds[0]?.results).toEqual({
+      votes: { 'livro-caio': 1, 'livro-bia': 1 },
+      firsts: { 'livro-caio': 1 },
+    });
+  });
+
+  it('anota quem votou e não guarda a escolha (R9)', () => {
+    const result = castBallot(club, 'ana', ['livro-caio', 'livro-bia']);
+
+    expect(result.ok && result.value.rounds[0]).toEqual({
+      ...round,
+      voters: ['ana'],
+      results: { votes: { 'livro-caio': 1, 'livro-bia': 1 }, firsts: { 'livro-caio': 1 } },
+    });
+  });
+
+  it('soma por cima dos votos anteriores', () => {
+    const first = castBallot(club, 'ana', ['livro-caio', 'livro-bia']);
+    const second = first.ok ? castBallot(first.value, 'bia', ['livro-caio', 'livro-ana']) : first;
+
+    expect(second.ok && second.value.rounds[0]?.results.votes).toEqual({
+      'livro-caio': 2,
+      'livro-bia': 1,
+      'livro-ana': 1,
+    });
+  });
+
+  it('recusa votar fora da votação', () => {
+    const nominating = aClub({ ...club, rounds: [{ ...round, status: 'nominating' }] });
+
+    expect(castBallot(nominating, 'ana', ['livro-bia', 'livro-caio'])).toEqual({
+      ok: false,
+      error: 'not-voting',
+    });
+  });
+
+  it('recusa quem não é membro do clube', () => {
+    expect(castBallot(club, 'davi', ['livro-bia', 'livro-caio'])).toEqual({
+      ok: false,
+      error: 'unknown-member',
+    });
+  });
+
+  it('devolve o erro da cédula', () => {
+    expect(castBallot(club, 'ana', ['livro-ana', 'livro-bia'])).toEqual({
+      ok: false,
+      error: 'own-nomination',
+    });
   });
 });
