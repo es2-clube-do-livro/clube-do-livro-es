@@ -34,3 +34,12 @@ export function addMember(
   if (problem) return err(problem);
   return ok({ ...state, members: [...state.members, { id, name: cleanSpaces(name) }] });
 }
+
+export type RemoveMemberError = 'round-open' | 'not-found';
+
+/** R2: a lista de membros não muda durante a indicação ou a votação. */
+export function removeMember(state: ClubState, id: MemberId): Result<ClubState, RemoveMemberError> {
+  if (isRoundOpen(state)) return err('round-open');
+  if (!state.members.some((member) => member.id === id)) return err('not-found');
+  return ok({ ...state, members: state.members.filter((member) => member.id !== id) });
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { aClub, aMember, aRound } from '../test/factories';
-import { addMember, validateMemberName } from './members';
+import { addMember, removeMember, validateMemberName } from './members';
 
 const members = [aMember('Ana'), aMember('João')];
 
@@ -47,5 +47,23 @@ describe('addMember', () => {
     const club = aClub({ members, rounds: [aRound({ status: 'reading' })] });
 
     expect(addMember(club, 'Bia', 'bia').ok).toBe(true);
+  });
+});
+
+describe('removeMember', () => {
+  it('tira o membro da lista', () => {
+    const result = removeMember(aClub({ members }), 'ana');
+
+    expect(result.ok && result.value.members).toEqual([aMember('João')]);
+  });
+
+  it('não remove durante a indicação ou a votação (R2)', () => {
+    const club = aClub({ members, rounds: [aRound({ status: 'voting' })] });
+
+    expect(removeMember(club, 'ana')).toEqual({ ok: false, error: 'round-open' });
+  });
+
+  it('avisa quando o membro não existe', () => {
+    expect(removeMember(aClub({ members }), 'davi')).toEqual({ ok: false, error: 'not-found' });
   });
 });
