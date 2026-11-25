@@ -1,9 +1,13 @@
 # Clube do Livro ES
 
+[![CI da main](https://github.com/es2-clube-do-livro/clube-do-livro-es/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/es2-clube-do-livro/clube-do-livro-es/actions/workflows/ci.yml?query=branch%3Amain)
+
 Site para um clube do livro escolher a próxima leitura: indicações, votação secreta com 1ª e
 2ª opção, apuração com desempate, leitura atual e histórico.
 
 Trabalho prático de Engenharia de Software 2.
+
+[Acessar o Clube do Livro em produção](https://clube-do-livro-es.web.app/)
 
 ## Integrantes
 
