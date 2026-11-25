@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { aNomination, aRound } from '../test/factories';
-import { eligibleOptions, requiredChoices } from './ballot';
+import { eligibleOptions, requiredChoices, validateBallot } from './ballot';
 
 const round = aRound({
   status: 'voting',
@@ -31,5 +31,33 @@ describe('requiredChoices', () => {
     const twoBooks = aRound({ nominations: round.nominations.slice(0, 2) });
 
     expect(requiredChoices(twoBooks, 'ana')).toBe(1);
+  });
+});
+
+describe('validateBallot', () => {
+  it('aceita a 1ª e a 2ª opção entre os livros dos outros', () => {
+    expect(validateBallot(round, 'ana', ['livro-caio', 'livro-bia'])).toBeNull();
+  });
+
+  it('recusa voto no próprio livro (R8)', () => {
+    expect(validateBallot(round, 'ana', ['livro-ana', 'livro-bia'])).toBe('own-nomination');
+  });
+
+  it('recusa o mesmo livro nas duas opções', () => {
+    expect(validateBallot(round, 'ana', ['livro-bia', 'livro-bia'])).toBe('duplicate');
+  });
+
+  it('recusa livro que não está na rodada', () => {
+    expect(validateBallot(round, 'ana', ['livro-bia', 'outro'])).toBe('not-an-option');
+  });
+
+  it('recusa cédula com uma opção só quando cabem duas', () => {
+    expect(validateBallot(round, 'ana', ['livro-bia'])).toBe('wrong-count');
+  });
+
+  it('recusa quem já votou', () => {
+    const voted = { ...round, voters: ['ana'] };
+
+    expect(validateBallot(voted, 'ana', ['livro-bia', 'livro-caio'])).toBe('already-voted');
   });
 });
