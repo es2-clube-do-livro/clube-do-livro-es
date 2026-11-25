@@ -1,5 +1,6 @@
 import { Navigate, NavLink, Route, Routes } from 'react-router';
 
+import { DataControls } from '../features/data/DataControls';
 import { HistoryPage } from '../features/history/HistoryPage';
 import { MembersPage } from '../features/members/MembersPage';
 import { RoundPage } from '../features/round/RoundPage';
@@ -36,6 +37,9 @@ export function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <footer className={styles.footer}>
+        <DataControls />
+      </footer>
     </div>
   );
 }
