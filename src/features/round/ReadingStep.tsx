@@ -3,6 +3,7 @@ import { finishReading, winningNomination } from '../../domain/reading';
 import { Button } from '../../ui/Button';
 import { EmptyState } from '../../ui/EmptyState';
 import styles from './ReadingStep.module.css';
+import { ResultChart } from './ResultChart';
 import type { StepProps } from './step-props';
 
 export function ReadingStep({ round }: StepProps) {
@@ -28,6 +29,7 @@ export function ReadingStep({ round }: StepProps) {
               <p>{book.author}</p>
             </div>
           </div>
+          <ResultChart round={round} />
           <Button onClick={() => apply((club, env) => finishReading(club, env.now()))}>
             Concluir leitura
           </Button>

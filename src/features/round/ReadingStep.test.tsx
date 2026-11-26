@@ -24,6 +24,7 @@ describe('etapa de leitura', () => {
     expect(screen.getByRole('heading', { name: 'Torto Arado' })).toBeVisible();
     expect(screen.getByText('Itamar Vieira Junior')).toBeVisible();
     expect(screen.getByRole('img', { name: 'Capa de Torto Arado' })).toHaveAttribute('src', cover);
+    expect(screen.getByRole('meter', { name: 'Torto Arado — Itamar Vieira Junior' })).toBeVisible();
   });
 
   it('permite concluir a leitura mesmo sem capa e libera a próxima rodada (R12)', async () => {
