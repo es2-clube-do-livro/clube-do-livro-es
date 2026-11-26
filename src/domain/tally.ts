@@ -33,9 +33,9 @@ function leaders(ids: readonly NominationId[], tally: Tally): NominationId[] {
 
 /**
  * A regra do clube (R11): vence quem tem mais votos; no empate, quem tem mais votos de
- * 1ª opção. Devolve null quando o empate continua.
+ * 1ª opção; se ainda empatar, `random` (de 0 a 1) sorteia entre os empatados.
  */
-export function decide(round: Round): Winner | null {
+export function decide(round: Round, random: () => number): Winner {
   const byVotes = leaders(
     round.nominations.map((nomination) => nomination.id),
     round.results.votes,
@@ -49,5 +49,7 @@ export function decide(round: Round): Winner | null {
   if (byFirsts.length === 1 && mostFirsts !== undefined) {
     return { nominationId: mostFirsts, method: 'first-choices' };
   }
-  return null;
+  const drawn = byFirsts[Math.min(Math.floor(random() * byFirsts.length), byFirsts.length - 1)];
+  if (drawn === undefined) throw new Error('A rodada não tem indicações para apurar.');
+  return { nominationId: drawn, method: 'draw' };
 }

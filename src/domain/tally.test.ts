@@ -17,6 +17,10 @@ function roundWith(results: Results) {
   });
 }
 
+const neverDrawn = () => {
+  throw new Error('não devia sortear');
+};
+
 describe('standings', () => {
   it('ordena do mais votado ao menos votado', () => {
     const round = roundWith({ votes: { a: 1, b: 3, c: 2 }, firsts: {} });
@@ -51,18 +55,30 @@ describe('decide', () => {
   it('dá a vitória a quem tem mais votos (R11)', () => {
     const round = roundWith({ votes: { a: 1, b: 3, c: 2 }, firsts: { a: 1 } });
 
-    expect(decide(round)).toEqual({ nominationId: 'b', method: 'votes' });
+    expect(decide(round, neverDrawn)).toEqual({ nominationId: 'b', method: 'votes' });
   });
 
   it('no empate de votos, vence quem tem mais votos de 1ª opção (R11)', () => {
     const round = roundWith({ votes: { a: 2, b: 2, c: 1 }, firsts: { a: 1, b: 2 } });
 
-    expect(decide(round)).toEqual({ nominationId: 'b', method: 'first-choices' });
+    expect(decide(round, neverDrawn)).toEqual({ nominationId: 'b', method: 'first-choices' });
   });
 
-  it('não decide quando o empate continua na 1ª opção', () => {
+  it('se o empate continua, sorteia entre os empatados (R11)', () => {
     const round = roundWith({ votes: { a: 2, b: 2, c: 2 }, firsts: { a: 1, b: 1, c: 1 } });
 
-    expect(decide(round)).toBeNull();
+    expect(decide(round, () => 0)).toEqual({ nominationId: 'a', method: 'draw' });
+    expect(decide(round, () => 0.99)).toEqual({ nominationId: 'c', method: 'draw' });
+  });
+
+  it('sorteia só entre os livros que continuam empatados', () => {
+    const round = roundWith({ votes: { a: 1, b: 2, c: 2 }, firsts: { b: 1, c: 1 } });
+
+    expect(decide(round, () => 0)).toEqual({ nominationId: 'b', method: 'draw' });
+    expect(decide(round, () => 0.99)).toEqual({ nominationId: 'c', method: 'draw' });
+  });
+
+  it('avisa quando a rodada não tem indicações', () => {
+    expect(() => decide(aRound(), () => 0)).toThrow('não tem indicações');
   });
 });
