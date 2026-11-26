@@ -1,9 +1,14 @@
-import { screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { CoverFinder } from '../../services/cover-finder';
+import { CoverFinderContext, type CoverFinder } from '../../services/cover-finder';
+import { findCover as findGoogleCover } from '../../services/google-books';
+import { createLocalStorageRepository } from '../../storage/local-storage';
 import { aBook, aClub, aMember, aNomination, aRound } from '../../test/factories';
 import { renderWithClub } from '../../test/render';
+import { StoredClub } from '../data/StoredClub';
 import { RoundPage } from './RoundPage';
 
 const members = [aMember('Ana'), aMember('Bia'), aMember('Caio')];
@@ -149,5 +154,45 @@ describe('NominationStep', () => {
       'src',
       'https://capas.exemplo/dom-casmurro.jpg',
     );
+  });
+
+  it('mantém o clube salvo quando o Google Livros devolve uma capa inválida (R14 e R15)', async () => {
+    const storage = window.localStorage;
+    storage.clear();
+    const repository = createLocalStorageRepository(storage);
+    repository.save(club);
+    const relativeCover: typeof fetch = () =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ items: [{ volumeInfo: { imageLinks: { thumbnail: '/capa.jpg' } } }] }),
+        ),
+      );
+    const findCover: CoverFinder = (book) => findGoogleCover(book, relativeCover);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <StoredClub repository={repository} initial={repository.load()}>
+          <CoverFinderContext value={findCover}>
+            <RoundPage />
+          </CoverFinderContext>
+        </StoredClub>
+      </MemoryRouter>,
+    );
+
+    await user.selectOptions(screen.getByLabelText('Quem está indicando'), 'Ana');
+    await user.type(screen.getByLabelText('Título'), 'Dom Casmurro');
+    await user.type(screen.getByLabelText('Autor'), 'Machado de Assis');
+    await user.click(screen.getByRole('button', { name: 'Indicar' }));
+    await screen.findByText('Dom Casmurro');
+
+    const reloaded = repository.load();
+    expect(reloaded.status).toBe('ready');
+    expect(reloaded.state.members).toHaveLength(3);
+    expect(reloaded.state.rounds[0]?.nominations[0]?.book).toEqual({
+      title: 'Dom Casmurro',
+      author: 'Machado de Assis',
+      coverUrl: null,
+    });
+    storage.clear();
   });
 });

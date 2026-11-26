@@ -13,11 +13,18 @@ export function coverSearchUrl({ title, author }: Pick<Book, 'title' | 'author'>
   return `${GOOGLE_BOOKS_URL}?q=${encodeURIComponent(query)}&maxResults=1&printType=books`;
 }
 
-/** A capa do primeiro resultado, trocando http por https. */
+/** Só um endereço absoluto em https serve de capa; http vira https e o resto é descartado. */
+export function httpsCover(link: unknown): string | null {
+  if (typeof link !== 'string' || !URL.canParse(link)) return null;
+  const url = new URL(link);
+  if (url.protocol === 'http:') url.protocol = 'https:';
+  return url.protocol === 'https:' ? url.href : null;
+}
+
+/** A capa do primeiro resultado: a miniatura maior ou, se ela não servir, a menor. */
 function thumbnailOf(data: VolumesResponse): string | null {
   const links = data.items?.[0]?.volumeInfo?.imageLinks;
-  const link = links?.thumbnail ?? links?.smallThumbnail;
-  return link ? link.replace(/^http:/, 'https:') : null;
+  return httpsCover(links?.thumbnail) ?? httpsCover(links?.smallThumbnail);
 }
 
 /**

@@ -35,6 +35,26 @@ describe('findCover', () => {
     await expect(findCover(book, fetcher)).resolves.toBe('https://books.google.com/mini.jpg');
   });
 
+  it('descarta um endereço que não é absoluto (R15)', async () => {
+    await expect(
+      findCover(book, respondWith(volume({ thumbnail: '/capa.jpg' }))),
+    ).resolves.toBeNull();
+  });
+
+  it('usa a miniatura menor quando a maior não é um endereço válido', async () => {
+    const fetcher = respondWith(
+      volume({ thumbnail: '/capa.jpg', smallThumbnail: 'http://books.google.com/mini.jpg' }),
+    );
+
+    await expect(findCover(book, fetcher)).resolves.toBe('https://books.google.com/mini.jpg');
+  });
+
+  it('descarta endereços que não são de imagem na web', async () => {
+    const fetcher = respondWith(volume({ thumbnail: 'javascript:alert(1)' }));
+
+    await expect(findCover(book, fetcher)).resolves.toBeNull();
+  });
+
   it('devolve null quando não acha o livro', async () => {
     await expect(findCover(book, respondWith({ totalItems: 0 }))).resolves.toBeNull();
   });
