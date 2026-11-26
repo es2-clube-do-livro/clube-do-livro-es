@@ -1,0 +1,29 @@
+.rounds {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.round {
+  min-width: 0;
+  padding: var(--space-4);
+  overflow-wrap: anywhere;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.round h3,
+.round dd {
+  margin: 0;
+}
+
+.round dt {
+  color: var(--color-muted);
+}
+
+.round figure {
+  margin-bottom: 0;
+}
