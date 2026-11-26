@@ -106,3 +106,29 @@ export function openVoting(state: ClubState): Result<ClubState, OpenVotingError>
     }),
   );
 }
+
+export type SetCoverError = 'invalid-cover' | 'not-found';
+
+/**
+ * R15: liga a capa à indicação quando a busca termina, mesmo que a votação já tenha aberto.
+ * Só aceita endereço absoluto em https, o mesmo que o clube salvo aceita ao carregar.
+ */
+export function setCover(
+  state: ClubState,
+  nominationId: NominationId,
+  coverUrl: string,
+): Result<ClubState, SetCoverError> {
+  if (!URL.canParse(coverUrl) || new URL(coverUrl).protocol !== 'https:') {
+    return err('invalid-cover');
+  }
+  const round = state.rounds.find((item) =>
+    item.nominations.some((nomination) => nomination.id === nominationId),
+  );
+  if (!round) return err('not-found');
+  const nominations = round.nominations.map((nomination) =>
+    nomination.id === nominationId
+      ? { ...nomination, book: { ...nomination.book, coverUrl } }
+      : nomination,
+  );
+  return ok(replaceRound(state, { ...round, nominations }));
+}

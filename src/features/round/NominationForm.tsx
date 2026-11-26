@@ -1,7 +1,8 @@
 import { useId, useState } from 'react';
 
 import { useClub } from '../../app/club-context';
-import { nominate, type NominationError } from '../../domain/nominations';
+import { nominate, setCover, validateBook, type NominationError } from '../../domain/nominations';
+import { useCoverFinder } from '../../services/cover-finder';
 import { Button } from '../../ui/Button';
 import { TextField } from '../../ui/TextField';
 import styles from './NominationForm.module.css';
@@ -32,6 +33,7 @@ const FIELD_OF: Record<NominationError, 'title' | 'author' | 'form'> = {
 
 export function NominationForm({ round }: StepProps) {
   const { state, apply } = useClub();
+  const findCover = useCoverFinder();
   const selectId = useId();
   const [memberId, setMemberId] = useState('');
   const [title, setTitle] = useState('');
@@ -45,14 +47,27 @@ export function NominationForm({ round }: StepProps) {
 
   if (pending.length === 0) return <p>Todos os membros já indicaram.</p>;
 
+  /**
+   * A indicação entra na hora, sem esperar a capa: assim ela já existe se alguém abrir a votação
+   * durante a busca, e o fim da busca não mexe no formulário. A capa é ligada quando chega.
+   */
   function submit() {
-    const book = { title, author, coverUrl: null };
-    const result = apply((club, env) => nominate(club, memberId, book, env.newId()));
+    const problem = validateBook({ title, author });
+    setError(problem);
+    if (problem) return;
+    let nominationId = '';
+    const result = apply((club, env) => {
+      nominationId = env.newId();
+      return nominate(club, memberId, { title, author, coverUrl: null }, nominationId);
+    });
     setError(result.ok ? null : result.error);
     if (!result.ok) return;
     setMemberId('');
     setTitle('');
     setAuthor('');
+    void findCover({ title, author }).then((coverUrl) => {
+      if (coverUrl) apply((club) => setCover(club, nominationId, coverUrl));
+    });
   }
 
   return (

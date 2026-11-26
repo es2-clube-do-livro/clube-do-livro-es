@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router';
 import type { ClubEnvironment } from '../app/club-context';
 import { ClubProvider } from '../app/ClubProvider';
 import type { ClubState } from '../domain/types';
+import { CoverFinderContext, type CoverFinder } from '../services/cover-finder';
 import { aClub } from './factories';
 
 /** Ids "id-1", "id-2"…, hora fixa e sorteio que sempre cai no primeiro empatado. */
@@ -25,18 +26,25 @@ interface RenderOptions {
   state?: ClubState;
   route?: string;
   environment?: ClubEnvironment;
+  /** Dublê da busca de capa; sem ele, nenhuma capa é encontrada. */
+  findCover?: CoverFinder;
 }
 
 /** Renderiza uma tela com o clube, as rotas e um `user` do user-event. */
 export function renderWithClub(
   ui: ReactElement,
-  { state = aClub(), route = '/', environment = testEnvironment() }: RenderOptions = {},
+  {
+    state = aClub(),
+    route = '/',
+    environment = testEnvironment(),
+    findCover = () => Promise.resolve(null),
+  }: RenderOptions = {},
 ) {
   const user = userEvent.setup();
   const view = render(
     <MemoryRouter initialEntries={[route]}>
       <ClubProvider initialState={state} environment={environment}>
-        {ui}
+        <CoverFinderContext value={findCover}>{ui}</CoverFinderContext>
       </ClubProvider>
     </MemoryRouter>,
   );

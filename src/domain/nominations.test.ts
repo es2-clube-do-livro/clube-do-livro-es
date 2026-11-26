@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { aBook, aClub, aMember, aNomination, aRound } from '../test/factories';
-import { nominate, openVoting, startRound, validateBook } from './nominations';
+import { nominate, openVoting, setCover, startRound, validateBook } from './nominations';
 
 const now = '2026-03-01T19:00:00.000Z';
 const members = [aMember('Ana'), aMember('Bia'), aMember('Caio')];
@@ -145,5 +145,39 @@ describe('openVoting', () => {
     const club = aClub({ members, rounds: [aRound({ status: 'voting', nominations })] });
 
     expect(openVoting(club)).toEqual({ ok: false, error: 'not-nominating' });
+  });
+});
+
+describe('setCover', () => {
+  const cover = 'https://books.google.com/capa.jpg';
+  const nominations = [aNomination({ id: 'n1', memberId: 'ana', book: aBook() })];
+
+  it('liga a capa à indicação (R15)', () => {
+    const club = aClub({ members, rounds: [aRound({ nominations })] });
+    const result = setCover(club, 'n1', cover);
+
+    expect(result.ok && result.value.rounds[0]?.nominations[0]?.book.coverUrl).toBe(cover);
+  });
+
+  it('liga a capa mesmo depois que a votação abriu', () => {
+    const club = aClub({ members, rounds: [aRound({ status: 'voting', nominations })] });
+
+    expect(setCover(club, 'n1', cover).ok).toBe(true);
+  });
+
+  it('recusa um endereço que não é absoluto em https', () => {
+    const club = aClub({ members, rounds: [aRound({ nominations })] });
+
+    expect(setCover(club, 'n1', '/capa.jpg')).toEqual({ ok: false, error: 'invalid-cover' });
+    expect(setCover(club, 'n1', 'http://books.google.com/capa.jpg')).toEqual({
+      ok: false,
+      error: 'invalid-cover',
+    });
+  });
+
+  it('avisa quando a indicação não existe', () => {
+    const club = aClub({ members, rounds: [aRound({ nominations })] });
+
+    expect(setCover(club, 'n9', cover)).toEqual({ ok: false, error: 'not-found' });
   });
 });
