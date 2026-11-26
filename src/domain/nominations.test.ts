@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { aClub, aMember, aRound } from '../test/factories';
-import { startRound } from './nominations';
+import { aBook, aClub, aMember, aRound } from '../test/factories';
+import { startRound, validateBook } from './nominations';
 
 const now = '2026-03-01T19:00:00.000Z';
 const members = [aMember('Ana'), aMember('Bia'), aMember('Caio')];
@@ -33,5 +33,20 @@ describe('startRound', () => {
     const club = aClub({ members, rounds: [aRound({ status: 'reading' })] });
 
     expect(startRound(club, 'r2', now)).toEqual({ ok: false, error: 'round-in-progress' });
+  });
+});
+
+describe('validateBook', () => {
+  it('aceita título e autor', () => {
+    expect(validateBook(aBook())).toBeNull();
+  });
+
+  it.each([
+    [{ title: '   ', author: 'Machado de Assis' }, 'title-required'],
+    [{ title: 'A'.repeat(121), author: 'Machado de Assis' }, 'title-too-long'],
+    [{ title: 'Dom Casmurro', author: '' }, 'author-required'],
+    [{ title: 'Dom Casmurro', author: 'M'.repeat(81) }, 'author-too-long'],
+  ])('recusa %o com %s (R4)', (book, error) => {
+    expect(validateBook(book)).toBe(error);
   });
 });
