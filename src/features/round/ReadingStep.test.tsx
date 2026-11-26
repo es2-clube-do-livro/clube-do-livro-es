@@ -47,4 +47,25 @@ describe('etapa de leitura', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Rodada 1: leitura' })).toBeVisible();
   });
+
+  it('mantém o teclado na confirmação e devolve o foco a "Concluir leitura" com Esc', async () => {
+    const { user } = renderReading();
+    const finish = screen.getByRole('button', { name: 'Concluir leitura' });
+
+    await user.click(finish);
+    const dialog = screen.getByRole('dialog', { name: 'Concluir a leitura?' });
+    const cancel = within(dialog).getByRole('button', { name: 'Cancelar' });
+    const confirm = within(dialog).getByRole('button', { name: 'Concluir' });
+    expect(cancel).toHaveFocus();
+    await user.tab();
+    expect(confirm).toHaveFocus();
+    await user.tab();
+    expect(cancel).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(confirm).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(finish).toHaveFocus();
+  });
 });
