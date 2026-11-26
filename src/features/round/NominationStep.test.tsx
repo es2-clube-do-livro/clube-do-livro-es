@@ -74,4 +74,51 @@ describe('NominationStep', () => {
 
     expect(screen.getByText('Todos os membros já indicaram.')).toBeVisible();
   });
+
+  it('lista os livros indicados sem dizer quem indicou', () => {
+    const withBooks = aClub({
+      members,
+      rounds: [
+        aRound({
+          nominations: [
+            aNomination({ id: 'n1', memberId: 'ana', book: aBook() }),
+            aNomination({ id: 'n2', memberId: 'bia', book: aBook({ title: 'Torto Arado' }) }),
+          ],
+        }),
+      ],
+    });
+    renderWithClub(<RoundPage />, { state: withBooks });
+
+    const list = within(screen.getByRole('list', { name: 'Indicações da rodada' }));
+    expect(list.getByText('Dom Casmurro')).toBeVisible();
+    expect(list.getByText('Torto Arado')).toBeVisible();
+    expect(list.queryByText(/Ana|Bia/)).not.toBeInTheDocument();
+  });
+
+  it('abre a votação com pelo menos dois livros (R7)', async () => {
+    const withBooks = aClub({
+      members,
+      rounds: [
+        aRound({
+          nominations: [
+            aNomination({ id: 'n1', memberId: 'ana', book: aBook() }),
+            aNomination({ id: 'n2', memberId: 'bia', book: aBook({ title: 'Torto Arado' }) }),
+          ],
+        }),
+      ],
+    });
+    const { user } = renderWithClub(<RoundPage />, { state: withBooks });
+
+    await user.click(screen.getByRole('button', { name: 'Abrir votação' }));
+
+    expect(screen.getByRole('heading', { name: 'Rodada 1: votação' })).toBeVisible();
+  });
+
+  it('não abre a votação com menos de dois livros (R7)', async () => {
+    const { user } = renderWithClub(<RoundPage />, { state: club });
+
+    await user.click(screen.getByRole('button', { name: 'Abrir votação' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('pelo menos 2 livros');
+  });
 });
