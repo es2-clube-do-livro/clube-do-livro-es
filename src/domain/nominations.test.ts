@@ -86,6 +86,20 @@ describe('nominate', () => {
     });
   });
 
+  it('recusa o mesmo livro com a pontuação do autor escrita de outro jeito (R6)', () => {
+    const hobbit = aBook({ title: 'O Hobbit', author: 'J.R.R. Tolkien' });
+    const withBook = aClub({
+      ...club,
+      rounds: [aRound({ nominations: [aNomination({ memberId: 'ana', book: hobbit })] })],
+    });
+    const sameBook = aBook({ title: 'O Hobbit', author: 'JRR Tolkien' });
+
+    expect(nominate(withBook, 'bia', sameBook, 'n2')).toEqual({
+      ok: false,
+      error: 'duplicate-book',
+    });
+  });
+
   it('devolve o erro do livro', () => {
     expect(nominate(club, 'ana', aBook({ title: '' }), 'n1')).toEqual({
       ok: false,

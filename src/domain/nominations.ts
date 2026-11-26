@@ -52,12 +52,14 @@ export function validateBook(book: Pick<Book, 'title' | 'author'>): BookError | 
   return null;
 }
 
-/** R6: o mesmo livro, ignorando maiúsculas, acentos, pontuação e espaços extras. */
+/** Sem espaço nenhum, para "J.R.R. Tolkien" e "JRR Tolkien" ficarem iguais. */
+function bookKey(text: string): string {
+  return normalizeText(text).replaceAll(' ', '');
+}
+
+/** R6: o mesmo livro, ignorando maiúsculas, acentos, pontuação e espaços. */
 function sameBook(a: Book, b: Book): boolean {
-  return (
-    normalizeText(a.title) === normalizeText(b.title) &&
-    normalizeText(a.author) === normalizeText(b.author)
-  );
+  return bookKey(a.title) === bookKey(b.title) && bookKey(a.author) === bookKey(b.author);
 }
 
 export type NominationError =
