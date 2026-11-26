@@ -1,7 +1,7 @@
-import { activeRound } from './club';
+import { activeRound, replaceRound } from './club';
 import { err, ok, type Result } from './result';
-import { cleanSpaces } from './text';
-import type { Book, ClubState, RoundId } from './types';
+import { cleanSpaces, normalizeText } from './text';
+import type { Book, ClubState, MemberId, NominationId, RoundId } from './types';
 
 export const MIN_MEMBERS = 2;
 
@@ -50,4 +50,38 @@ export function validateBook(book: Pick<Book, 'title' | 'author'>): BookError | 
   if (author.length === 0) return 'author-required';
   if (author.length > AUTHOR_MAX_LENGTH) return 'author-too-long';
   return null;
+}
+
+/** R6: o mesmo livro, ignorando maiúsculas, acentos, pontuação e espaços extras. */
+function sameBook(a: Book, b: Book): boolean {
+  return (
+    normalizeText(a.title) === normalizeText(b.title) &&
+    normalizeText(a.author) === normalizeText(b.author)
+  );
+}
+
+export type NominationError =
+  BookError | 'not-nominating' | 'unknown-member' | 'already-nominated' | 'duplicate-book';
+
+/** R5 e R6: uma indicação por membro e nenhum livro repetido na rodada. */
+export function nominate(
+  state: ClubState,
+  memberId: MemberId,
+  book: Book,
+  id: NominationId,
+): Result<ClubState, NominationError> {
+  const round = activeRound(state);
+  if (round?.status !== 'nominating') return err('not-nominating');
+  if (!state.members.some((member) => member.id === memberId)) return err('unknown-member');
+  const problem = validateBook(book);
+  if (problem) return err(problem);
+  if (round.nominations.some((nomination) => nomination.memberId === memberId)) {
+    return err('already-nominated');
+  }
+  const clean = { ...book, title: cleanSpaces(book.title), author: cleanSpaces(book.author) };
+  if (round.nominations.some((nomination) => sameBook(nomination.book, clean))) {
+    return err('duplicate-book');
+  }
+  const nominations = [...round.nominations, { id, memberId, book: clean }];
+  return ok(replaceRound(state, { ...round, nominations }));
 }
