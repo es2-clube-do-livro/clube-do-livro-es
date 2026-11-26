@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('conclui a leitura e mostra o vencedor e a apuração no histórico (R12 e R13)', async ({
   page,
