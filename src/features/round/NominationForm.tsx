@@ -1,7 +1,8 @@
 import { useId, useState } from 'react';
 
 import { useClub } from '../../app/club-context';
-import { nominate, type NominationError } from '../../domain/nominations';
+import { nominate, validateBook, type NominationError } from '../../domain/nominations';
+import { useCoverFinder } from '../../services/cover-finder';
 import { Button } from '../../ui/Button';
 import { TextField } from '../../ui/TextField';
 import styles from './NominationForm.module.css';
@@ -32,11 +33,13 @@ const FIELD_OF: Record<NominationError, 'title' | 'author' | 'form'> = {
 
 export function NominationForm({ round }: StepProps) {
   const { state, apply } = useClub();
+  const findCover = useCoverFinder();
   const selectId = useId();
   const [memberId, setMemberId] = useState('');
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [error, setError] = useState<NominationError | null>(null);
+  const [searching, setSearching] = useState(false);
   const pending = state.members.filter(
     (member) => !round.nominations.some((nomination) => nomination.memberId === member.id),
   );
@@ -45,8 +48,14 @@ export function NominationForm({ round }: StepProps) {
 
   if (pending.length === 0) return <p>Todos os membros já indicaram.</p>;
 
-  function submit() {
-    const book = { title, author, coverUrl: null };
+  async function submit() {
+    const problem = validateBook({ title, author });
+    setError(problem);
+    if (problem) return;
+    setSearching(true);
+    const coverUrl = await findCover({ title, author });
+    setSearching(false);
+    const book = { title, author, coverUrl };
     const result = apply((club, env) => nominate(club, memberId, book, env.newId()));
     setError(result.ok ? null : result.error);
     if (!result.ok) return;
@@ -60,7 +69,7 @@ export function NominationForm({ round }: StepProps) {
       className={styles.form}
       onSubmit={(event) => {
         event.preventDefault();
-        submit();
+        void submit();
       }}
     >
       <div className={styles.field}>
@@ -97,7 +106,9 @@ export function NominationForm({ round }: StepProps) {
         }}
       />
       {messageFor('form') && <p role="alert">{messageFor('form')}</p>}
-      <Button type="submit">Indicar</Button>
+      <Button type="submit" disabled={searching}>
+        {searching ? 'Buscando capa…' : 'Indicar'}
+      </Button>
     </form>
   );
 }

@@ -7,6 +7,8 @@ import { BrowserRouter } from 'react-router';
 
 import { App } from './app/App';
 import { StoredClub } from './features/data/StoredClub';
+import { CoverFinderContext } from './services/cover-finder';
+import { findCover } from './services/google-books';
 import { createLocalStorageRepository } from './storage/local-storage';
 
 const root = document.getElementById('root');
@@ -19,7 +21,9 @@ createRoot(root).render(
   <StrictMode>
     <BrowserRouter>
       <StoredClub repository={repository} initial={initial}>
-        <App />
+        <CoverFinderContext value={findCover}>
+          <App />
+        </CoverFinderContext>
       </StoredClub>
     </BrowserRouter>
   </StrictMode>,

@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import type { CoverFinder } from '../../services/cover-finder';
 import { aBook, aClub, aMember, aNomination, aRound } from '../../test/factories';
 import { renderWithClub } from '../../test/render';
 import { RoundPage } from './RoundPage';
@@ -120,5 +121,18 @@ describe('NominationStep', () => {
     await user.click(screen.getByRole('button', { name: 'Abrir votação' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent('pelo menos 2 livros');
+  });
+
+  it('busca a capa pelo título e pelo autor ao indicar (R15)', async () => {
+    const findCover = vi.fn<CoverFinder>(() => Promise.resolve(null));
+    const { user } = renderWithClub(<RoundPage />, { state: club, findCover });
+
+    await user.selectOptions(screen.getByLabelText('Quem está indicando'), 'Ana');
+    await user.type(screen.getByLabelText('Título'), 'Dom Casmurro');
+    await user.type(screen.getByLabelText('Autor'), 'Machado de Assis');
+    await user.click(screen.getByRole('button', { name: 'Indicar' }));
+
+    expect(findCover).toHaveBeenCalledWith({ title: 'Dom Casmurro', author: 'Machado de Assis' });
+    expect(await screen.findByText('Dom Casmurro')).toBeVisible();
   });
 });
