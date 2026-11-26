@@ -1,8 +1,9 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ClubState } from '../../domain/types';
 import { CoverFinderContext, type CoverFinder } from '../../services/cover-finder';
 import { findCover as findGoogleCover } from '../../services/google-books';
 import { createLocalStorageRepository } from '../../storage/local-storage';
@@ -157,33 +158,20 @@ describe('NominationStep', () => {
   });
 
   it('mantém o clube salvo quando o Google Livros devolve uma capa inválida (R14 e R15)', async () => {
-    const storage = window.localStorage;
-    storage.clear();
-    const repository = createLocalStorageRepository(storage);
-    repository.save(club);
     const relativeCover: typeof fetch = () =>
       Promise.resolve(
         new Response(
           JSON.stringify({ items: [{ volumeInfo: { imageLinks: { thumbnail: '/capa.jpg' } } }] }),
         ),
       );
-    const findCover: CoverFinder = (book) => findGoogleCover(book, relativeCover);
-    const user = userEvent.setup();
-    render(
-      <MemoryRouter>
-        <StoredClub repository={repository} initial={repository.load()}>
-          <CoverFinderContext value={findCover}>
-            <RoundPage />
-          </CoverFinderContext>
-        </StoredClub>
-      </MemoryRouter>,
-    );
+    let search: Promise<string | null> = Promise.resolve(null);
+    const { user, repository } = renderSaved(club, (book) => {
+      search = findGoogleCover(book, relativeCover);
+      return search;
+    });
 
-    await user.selectOptions(screen.getByLabelText('Quem está indicando'), 'Ana');
-    await user.type(screen.getByLabelText('Título'), 'Dom Casmurro');
-    await user.type(screen.getByLabelText('Autor'), 'Machado de Assis');
-    await user.click(screen.getByRole('button', { name: 'Indicar' }));
-    await screen.findByText('Dom Casmurro');
+    await nominateBook(user, 'Ana', 'Dom Casmurro', 'Machado de Assis');
+    await search;
 
     const reloaded = repository.load();
     expect(reloaded.status).toBe('ready');
@@ -193,6 +181,110 @@ describe('NominationStep', () => {
       author: 'Machado de Assis',
       coverUrl: null,
     });
-    storage.clear();
+  });
+
+  it('não guarda uma capa inválida vinda de qualquer busca (R14 e R15)', async () => {
+    const search = controlledSearch();
+    const { user, repository } = renderSaved(club, search.findCover);
+
+    await nominateBook(user, 'Ana', 'Dom Casmurro', 'Machado de Assis');
+    await search.resolve('/capa.jpg');
+
+    const reloaded = repository.load();
+    expect(reloaded.status).toBe('ready');
+    expect(reloaded.state.rounds[0]?.nominations[0]?.book.coverUrl).toBeNull();
+  });
+
+  it('registra a indicação antes da capa chegar, mesmo se a votação abrir (R7 e R15)', async () => {
+    const twoBooks = aClub({
+      members,
+      rounds: [
+        aRound({
+          nominations: [
+            aNomination({ id: 'n1', memberId: 'ana', book: aBook() }),
+            aNomination({ id: 'n2', memberId: 'bia', book: aBook({ title: 'Torto Arado' }) }),
+          ],
+        }),
+      ],
+    });
+    const search = controlledSearch();
+    const { user, repository } = renderSaved(twoBooks, search.findCover);
+
+    await nominateBook(user, 'Caio', 'O Hobbit', 'J.R.R. Tolkien');
+    await user.click(screen.getByRole('button', { name: 'Abrir votação' }));
+    await search.resolve('https://books.google.com/hobbit.jpg');
+
+    const round = repository.load().state.rounds[0];
+    expect(round?.status).toBe('voting');
+    expect(round?.nominations.map((nomination) => nomination.book.title)).toEqual([
+      'Dom Casmurro',
+      'Torto Arado',
+      'O Hobbit',
+    ]);
+    expect(round?.nominations[2]?.book.coverUrl).toBe('https://books.google.com/hobbit.jpg');
+  });
+
+  it('não apaga o próximo rascunho quando a busca anterior termina', async () => {
+    const search = controlledSearch();
+    const { user } = renderSaved(club, search.findCover);
+
+    await nominateBook(user, 'Ana', 'Duna', 'Frank Herbert');
+    await user.selectOptions(screen.getByLabelText('Quem está indicando'), 'Bia');
+    await user.type(screen.getByLabelText('Título'), 'O Hobbit');
+    await user.type(screen.getByLabelText('Autor'), 'J.R.R. Tolkien');
+    await search.resolve('https://books.google.com/duna.jpg');
+
+    expect(screen.getByLabelText('Quem está indicando')).toHaveValue('bia');
+    expect(screen.getByLabelText('Título')).toHaveValue('O Hobbit');
+    expect(screen.getByLabelText('Autor')).toHaveValue('J.R.R. Tolkien');
+    expect(await screen.findByRole('img', { name: 'Capa de Duna' })).toBeVisible();
   });
 });
+
+/** Uma busca de capa que só termina quando o teste manda, para reproduzir a espera. */
+function controlledSearch() {
+  let answer: (cover: string | null) => void = () => undefined;
+  const findCover: CoverFinder = () =>
+    new Promise((resolve) => {
+      answer = resolve;
+    });
+  return {
+    findCover,
+    resolve: async (cover: string | null) => {
+      await act(async () => {
+        answer(cover);
+        await Promise.resolve();
+      });
+    },
+  };
+}
+
+/** A aba Rodada com o clube salvo no localStorage, como no site. */
+function renderSaved(state: ClubState, findCover: CoverFinder) {
+  window.localStorage.clear();
+  const repository = createLocalStorageRepository(window.localStorage);
+  repository.save(state);
+  const user = userEvent.setup();
+  render(
+    <MemoryRouter>
+      <StoredClub repository={repository} initial={repository.load()}>
+        <CoverFinderContext value={findCover}>
+          <RoundPage />
+        </CoverFinderContext>
+      </StoredClub>
+    </MemoryRouter>,
+  );
+  return { user, repository };
+}
+
+async function nominateBook(
+  user: ReturnType<typeof userEvent.setup>,
+  member: string,
+  title: string,
+  author: string,
+) {
+  await user.selectOptions(screen.getByLabelText('Quem está indicando'), member);
+  await user.type(screen.getByLabelText('Título'), title);
+  await user.type(screen.getByLabelText('Autor'), author);
+  await user.click(screen.getByRole('button', { name: 'Indicar' }));
+}

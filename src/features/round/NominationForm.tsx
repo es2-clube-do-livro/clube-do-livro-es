@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 
 import { useClub } from '../../app/club-context';
-import { nominate, validateBook, type NominationError } from '../../domain/nominations';
+import { nominate, setCover, validateBook, type NominationError } from '../../domain/nominations';
 import { useCoverFinder } from '../../services/cover-finder';
 import { Button } from '../../ui/Button';
 import { TextField } from '../../ui/TextField';
@@ -39,7 +39,6 @@ export function NominationForm({ round }: StepProps) {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [error, setError] = useState<NominationError | null>(null);
-  const [searching, setSearching] = useState(false);
   const pending = state.members.filter(
     (member) => !round.nominations.some((nomination) => nomination.memberId === member.id),
   );
@@ -48,20 +47,27 @@ export function NominationForm({ round }: StepProps) {
 
   if (pending.length === 0) return <p>Todos os membros já indicaram.</p>;
 
-  async function submit() {
+  /**
+   * A indicação entra na hora, sem esperar a capa: assim ela já existe se alguém abrir a votação
+   * durante a busca, e o fim da busca não mexe no formulário. A capa é ligada quando chega.
+   */
+  function submit() {
     const problem = validateBook({ title, author });
     setError(problem);
     if (problem) return;
-    setSearching(true);
-    const coverUrl = await findCover({ title, author });
-    setSearching(false);
-    const book = { title, author, coverUrl };
-    const result = apply((club, env) => nominate(club, memberId, book, env.newId()));
+    let nominationId = '';
+    const result = apply((club, env) => {
+      nominationId = env.newId();
+      return nominate(club, memberId, { title, author, coverUrl: null }, nominationId);
+    });
     setError(result.ok ? null : result.error);
     if (!result.ok) return;
     setMemberId('');
     setTitle('');
     setAuthor('');
+    void findCover({ title, author }).then((coverUrl) => {
+      if (coverUrl) apply((club) => setCover(club, nominationId, coverUrl));
+    });
   }
 
   return (
@@ -69,7 +75,7 @@ export function NominationForm({ round }: StepProps) {
       className={styles.form}
       onSubmit={(event) => {
         event.preventDefault();
-        void submit();
+        submit();
       }}
     >
       <div className={styles.field}>
@@ -106,9 +112,7 @@ export function NominationForm({ round }: StepProps) {
         }}
       />
       {messageFor('form') && <p role="alert">{messageFor('form')}</p>}
-      <Button type="submit" disabled={searching}>
-        {searching ? 'Buscando capa…' : 'Indicar'}
-      </Button>
+      <Button type="submit">Indicar</Button>
     </form>
   );
 }
