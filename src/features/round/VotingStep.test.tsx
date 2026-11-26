@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { aBook, aClub, aMember, aNomination, aRound } from '../../test/factories';
@@ -28,6 +28,8 @@ const club = aClub({
   ],
 });
 
+const group = (name: string) => within(screen.getByRole('group', { name }));
+
 describe('VotingStep', () => {
   it('mostra o andamento e só quem ainda não votou', () => {
     renderWithClub(<RoundPage />, { state: club });
@@ -45,5 +47,19 @@ describe('VotingStep', () => {
 
     await user.click(screen.getByRole('button', { name: 'Voltar' }));
     expect(screen.getByRole('button', { name: 'Votar como Ana' })).toBeVisible();
+  });
+
+  it('registra o voto sem mostrar o que a pessoa escolheu (R9)', async () => {
+    const { user } = renderWithClub(<RoundPage />, { state: club });
+
+    await user.click(screen.getByRole('button', { name: 'Votar como Ana' }));
+    await user.click(group('1ª opção').getByRole('radio', { name: /Vidas Secas/ }));
+    await user.click(group('2ª opção').getByRole('radio', { name: /Torto Arado/ }));
+    await user.click(screen.getByRole('button', { name: 'Confirmar voto' }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('Voto registrado');
+    expect(screen.getByText('2 de 3 já votaram.')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Votar como Ana' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Vidas Secas/)).not.toBeInTheDocument();
   });
 });
