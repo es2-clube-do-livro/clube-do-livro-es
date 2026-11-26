@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { aClub, aMember } from '../../test/factories';
+import { aClub, aMember, aRound } from '../../test/factories';
 import { renderWithClub } from '../../test/render';
 import { MembersPage } from './MembersPage';
 
@@ -41,5 +41,32 @@ describe('MembersPage', () => {
     expect(screen.getByLabelText('Nome')).toHaveAccessibleDescription(
       'Já existe um membro com esse nome.',
     );
+  });
+
+  it('remove um membro depois de confirmar', async () => {
+    const { user } = renderWithClub(<MembersPage />, { state: club });
+
+    await user.click(screen.getByRole('button', { name: 'Remover Ana' }));
+    await user.click(screen.getByRole('button', { name: 'Remover' }));
+
+    expect(screen.queryByText('Ana')).not.toBeInTheDocument();
+  });
+
+  it('mantém o membro quando a pessoa cancela', async () => {
+    const { user } = renderWithClub(<MembersPage />, { state: club });
+
+    await user.click(screen.getByRole('button', { name: 'Remover Ana' }));
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.getByText('Ana')).toBeVisible();
+  });
+
+  it('trava a lista durante a indicação e a votação (R2)', () => {
+    const open = aClub({ ...club, rounds: [aRound({ status: 'nominating' })] });
+    renderWithClub(<MembersPage />, { state: open });
+
+    expect(screen.getByRole('status')).toHaveTextContent('a lista de membros não muda');
+    expect(screen.getByRole('button', { name: 'Adicionar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Remover Ana' })).toBeDisabled();
   });
 });

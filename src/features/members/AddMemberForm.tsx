@@ -13,7 +13,7 @@ const MESSAGES: Record<AddMemberError, string> = {
   'round-open': 'Durante a indicação e a votação, a lista de membros não muda.',
 };
 
-export function AddMemberForm() {
+export function AddMemberForm({ disabled }: { disabled: boolean }) {
   const { apply } = useClub();
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -32,11 +32,14 @@ export function AddMemberForm() {
         label="Nome"
         value={name}
         error={error}
+        disabled={disabled}
         onChange={(event) => {
           setName(event.target.value);
         }}
       />
-      <Button type="submit">Adicionar</Button>
+      <Button type="submit" disabled={disabled}>
+        Adicionar
+      </Button>
     </form>
   );
 }
