@@ -1,4 +1,6 @@
-import type { NominationId, Round, Tally, Winner } from './types';
+import { activeRound, replaceRound } from './club';
+import { err, ok, type Result } from './result';
+import type { ClubState, NominationId, Round, Tally, Winner } from './types';
 
 export interface Standing {
   nominationId: NominationId;
@@ -52,4 +54,25 @@ export function decide(round: Round, random: () => number): Winner {
   const drawn = byFirsts[Math.min(Math.floor(random() * byFirsts.length), byFirsts.length - 1)];
   if (drawn === undefined) throw new Error('A rodada não tem indicações para apurar.');
   return { nominationId: drawn, method: 'draw' };
+}
+
+export type CloseError = 'not-voting' | 'no-ballots';
+
+/** Encerra a votação (R10): apura o vencedor, que vira a leitura da rodada. */
+export function closeVoting(
+  state: ClubState,
+  now: string,
+  random: () => number,
+): Result<ClubState, CloseError> {
+  const round = activeRound(state);
+  if (round?.status !== 'voting') return err('not-voting');
+  if (round.voters.length === 0) return err('no-ballots');
+  return ok(
+    replaceRound(state, {
+      ...round,
+      status: 'reading',
+      winner: decide(round, random),
+      closedAt: now,
+    }),
+  );
 }

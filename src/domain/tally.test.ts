@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { aNomination, aRound } from '../test/factories';
-import { decide, standings } from './tally';
+import { aClub, aNomination, aRound } from '../test/factories';
+import { closeVoting, decide, standings } from './tally';
 import type { Results } from './types';
 
 function roundWith(results: Results) {
@@ -80,5 +80,40 @@ describe('decide', () => {
 
   it('avisa quando a rodada não tem indicações', () => {
     expect(() => decide(aRound(), () => 0)).toThrow('não tem indicações');
+  });
+});
+
+describe('closeVoting', () => {
+  const now = '2026-03-08T21:00:00.000Z';
+
+  it('encerra a votação e grava o vencedor, o critério e a hora', () => {
+    const round = roundWith({ votes: { a: 1, b: 3, c: 2 }, firsts: {} });
+
+    const result = closeVoting(aClub({ rounds: [round] }), now, neverDrawn);
+
+    expect(result.ok && result.value.rounds[0]).toEqual({
+      ...round,
+      status: 'reading',
+      winner: { nominationId: 'b', method: 'votes' },
+      closedAt: now,
+    });
+  });
+
+  it('não encerra sem nenhum voto (R10)', () => {
+    const round = { ...roundWith({ votes: {}, firsts: {} }), voters: [] };
+
+    expect(closeVoting(aClub({ rounds: [round] }), now, neverDrawn)).toEqual({
+      ok: false,
+      error: 'no-ballots',
+    });
+  });
+
+  it('não encerra o que não está em votação', () => {
+    const round = aRound({ status: 'nominating' });
+
+    expect(closeVoting(aClub({ rounds: [round] }), now, neverDrawn)).toEqual({
+      ok: false,
+      error: 'not-voting',
+    });
   });
 });
