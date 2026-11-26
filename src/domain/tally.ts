@@ -1,4 +1,4 @@
-import type { NominationId, Round, Tally } from './types';
+import type { NominationId, Round, Tally, Winner } from './types';
 
 export interface Standing {
   nominationId: NominationId;
@@ -23,4 +23,31 @@ export function standings(round: Round): Standing[] {
       return { nominationId, votes, firsts, share: total === 0 ? 0 : votes / total };
     })
     .sort((a, b) => b.votes - a.votes || b.firsts - a.firsts);
+}
+
+/** As indicações com a maior contagem, na ordem em que chegaram. */
+function leaders(ids: readonly NominationId[], tally: Tally): NominationId[] {
+  const best = Math.max(...ids.map((id) => count(tally, id)));
+  return ids.filter((id) => count(tally, id) === best);
+}
+
+/**
+ * A regra do clube (R11): vence quem tem mais votos; no empate, quem tem mais votos de
+ * 1ª opção. Devolve null quando o empate continua.
+ */
+export function decide(round: Round): Winner | null {
+  const byVotes = leaders(
+    round.nominations.map((nomination) => nomination.id),
+    round.results.votes,
+  );
+  const [mostVoted] = byVotes;
+  if (byVotes.length === 1 && mostVoted !== undefined) {
+    return { nominationId: mostVoted, method: 'votes' };
+  }
+  const byFirsts = leaders(byVotes, round.results.firsts);
+  const [mostFirsts] = byFirsts;
+  if (byFirsts.length === 1 && mostFirsts !== undefined) {
+    return { nominationId: mostFirsts, method: 'first-choices' };
+  }
+  return null;
 }
