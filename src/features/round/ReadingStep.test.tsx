@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { aBook, aClub, aNomination, aRound } from '../../test/factories';
@@ -32,7 +32,19 @@ describe('etapa de leitura', () => {
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Concluir leitura' }));
+    const dialog = screen.getByRole('dialog', { name: 'Concluir a leitura?' });
+    await user.click(within(dialog).getByRole('button', { name: 'Concluir' }));
 
     expect(screen.getByRole('heading', { name: 'Nenhuma rodada em andamento' })).toBeVisible();
+  });
+
+  it('pede confirmação e continua na leitura quando a pessoa cancela', async () => {
+    const { user } = renderReading();
+
+    await user.click(screen.getByRole('button', { name: 'Concluir leitura' }));
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Rodada 1: leitura' })).toBeVisible();
   });
 });

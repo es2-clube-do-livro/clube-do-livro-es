@@ -1,13 +1,18 @@
+import { useState } from 'react';
+
 import { useClub } from '../../app/club-context';
 import { finishReading, winningNomination } from '../../domain/reading';
 import { Button } from '../../ui/Button';
+import { ConfirmDialog } from '../../ui/ConfirmDialog';
 import { EmptyState } from '../../ui/EmptyState';
 import styles from './ReadingStep.module.css';
 import { ResultChart } from './ResultChart';
 import type { StepProps } from './step-props';
 
+/** A leitura da rodada: o livro vencedor, o resultado e o botão de concluir (R12). */
 export function ReadingStep({ round }: StepProps) {
   const { apply } = useClub();
+  const [confirming, setConfirming] = useState(false);
   const book = winningNomination(round)?.book;
 
   return (
@@ -30,12 +35,30 @@ export function ReadingStep({ round }: StepProps) {
             </div>
           </div>
           <ResultChart round={round} />
-          <Button onClick={() => apply((club, env) => finishReading(club, env.now()))}>
+          <Button
+            onClick={() => {
+              setConfirming(true);
+            }}
+          >
             Concluir leitura
           </Button>
         </>
       ) : (
         <EmptyState title="Livro vencedor indisponível." />
+      )}
+      {confirming && (
+        <ConfirmDialog
+          title="Concluir a leitura?"
+          message="A rodada vai para o histórico, e o clube pode começar outra."
+          confirmLabel="Concluir"
+          onConfirm={() => {
+            setConfirming(false);
+            apply((club, env) => finishReading(club, env.now()));
+          }}
+          onCancel={() => {
+            setConfirming(false);
+          }}
+        />
       )}
     </section>
   );
