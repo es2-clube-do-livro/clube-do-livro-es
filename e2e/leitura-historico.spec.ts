@@ -21,6 +21,7 @@ test('conclui a leitura e mostra o vencedor e a apuração no histórico (R12 e 
 
   await expect(page.getByRole('heading', { name: 'Dom Casmurro' })).toBeVisible();
   await page.getByRole('button', { name: 'Concluir leitura' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Concluir', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Nenhuma rodada em andamento' })).toBeVisible();
   await page.getByRole('link', { name: 'Histórico' }).click();
 
