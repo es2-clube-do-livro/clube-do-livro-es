@@ -17,11 +17,23 @@ Trabalho prático de Engenharia de Software 2.
 
 ## Sobre o sistema
 
-> Em construção. O escopo completo está em [`docs/ESCOPO.md`](docs/ESCOPO.md).
+O Clube do Livro ES ajuda um clube de leitura a escolher, de forma justa, o próximo livro. O
+clube usa o site num aparelho só, durante o encontro, e os dados ficam salvos no navegador: não
+há login nem servidor.
 
-O clube usa o site num aparelho só, durante o encontro: quem organiza cadastra os membros, cada
-pessoa indica um livro, todos votam em segredo e o site apura o vencedor. Os dados ficam no
-navegador, sem login.
+- **Membros:** cadastrar e remover quem participa, sem nomes repetidos.
+- **Indicações:** cada membro indica um livro por rodada; o site busca a capa no Google Livros e
+  recusa livros repetidos.
+- **Votação secreta:** cada pessoa marca a 1ª e a 2ª opção, nunca o próprio livro. O site guarda
+  só quem já votou e a soma dos votos.
+- **Apuração:** vence o livro com mais votos; no empate, o que tem mais votos de 1ª opção; se
+  ainda empatar, há sorteio. O resultado aparece em barras.
+- **Leitura e histórico:** o vencedor vira a leitura atual e, ao terminar, vai para o histórico
+  com o resultado da votação.
+- **Clube de exemplo:** carrega membros e indicações prontos para experimentar o fluxo.
+
+As histórias de usuário e as regras estão em [`docs/ESCOPO.md`](docs/ESCOPO.md), e a arquitetura
+em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
 ## Tecnologias
 
