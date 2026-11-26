@@ -7,9 +7,18 @@ export type CoverFinder = (book: Pick<Book, 'title' | 'author'>) => Promise<stri
 
 const noCover: CoverFinder = () => Promise.resolve(null);
 
+/** Tenta cada busca na ordem e fica com a primeira capa encontrada; as seguintes nem rodam. */
+export function firstCover(...finders: readonly CoverFinder[]): CoverFinder {
+  return (book) =>
+    finders.reduce<Promise<string | null>>(
+      (found, find) => found.then((cover) => cover ?? find(book)),
+      Promise.resolve(null),
+    );
+}
+
 /**
- * O site usa a busca no Google Livros (veja main.tsx). Sem provider, nenhuma capa é buscada:
- * é assim que os testes de tela rodam sem internet.
+ * O site busca no Google Livros e, sem resultado, na Open Library (veja main.tsx). Sem provider,
+ * nenhuma capa é buscada: é assim que os testes de tela rodam sem internet.
  */
 export const CoverFinderContext = createContext<CoverFinder>(noCover);
 
