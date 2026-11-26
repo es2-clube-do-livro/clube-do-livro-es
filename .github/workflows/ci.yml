@@ -75,6 +75,9 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+        env:
+          # Chave do Google Livros restrita ao site; sem ela, a busca de capa usa a cota pública.
+          VITE_GOOGLE_BOOKS_API_KEY: ${{ vars.VITE_GOOGLE_BOOKS_API_KEY }}
 
       - name: Conferir o commit atual da main
         id: main

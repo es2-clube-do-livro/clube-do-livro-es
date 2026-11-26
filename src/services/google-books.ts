@@ -8,9 +8,14 @@ interface VolumesResponse {
   items?: { volumeInfo?: { imageLinks?: { thumbnail?: string; smallThumbnail?: string } } }[];
 }
 
-export function coverSearchUrl({ title, author }: Pick<Book, 'title' | 'author'>): string {
+/** Com a chave do projeto, a busca usa a cota dele; sem ela, a cota pública, que pode acabar. */
+export function coverSearchUrl(
+  { title, author }: Pick<Book, 'title' | 'author'>,
+  apiKey?: string,
+): string {
   const query = `intitle:${title} inauthor:${author}`;
-  return `${GOOGLE_BOOKS_URL}?q=${encodeURIComponent(query)}&maxResults=1&printType=books`;
+  const key = apiKey ? `&key=${encodeURIComponent(apiKey)}` : '';
+  return `${GOOGLE_BOOKS_URL}?q=${encodeURIComponent(query)}&maxResults=1&printType=books${key}`;
 }
 
 /** Só um endereço absoluto em https serve de capa; http vira https e o resto é descartado. */
@@ -35,13 +40,14 @@ export async function findCover(
   book: Pick<Book, 'title' | 'author'>,
   fetcher: typeof fetch = fetch,
   timeoutMs = TIMEOUT_MS,
+  apiKey?: string,
 ): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => {
     controller.abort();
   }, timeoutMs);
   try {
-    const response = await fetcher(coverSearchUrl(book), { signal: controller.signal });
+    const response = await fetcher(coverSearchUrl(book, apiKey), { signal: controller.signal });
     if (!response.ok) return null;
     // Todos os campos são opcionais: uma resposta diferente só resulta em "sem capa".
     return thumbnailOf((await response.json()) as VolumesResponse);
