@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { aBook, aClub, aMember, aNomination, aRound } from '../test/factories';
-import { nominate, startRound, validateBook } from './nominations';
+import { nominate, openVoting, startRound, validateBook } from './nominations';
 
 const now = '2026-03-01T19:00:00.000Z';
 const members = [aMember('Ana'), aMember('Bia'), aMember('Caio')];
@@ -101,5 +101,35 @@ describe('nominate', () => {
     const voting = aClub({ members, rounds: [aRound({ status: 'voting' })] });
 
     expect(nominate(voting, 'ana', aBook(), 'n1')).toEqual({ ok: false, error: 'not-nominating' });
+  });
+});
+
+describe('openVoting', () => {
+  const nominations = [
+    aNomination({ id: 'n1', memberId: 'ana' }),
+    aNomination({ id: 'n2', memberId: 'bia', book: aBook({ title: 'Torto Arado' }) }),
+  ];
+
+  it('abre a votação com a contagem zerada (R7)', () => {
+    const club = aClub({ members, rounds: [aRound({ nominations })] });
+
+    const result = openVoting(club);
+
+    expect(result.ok && result.value.rounds[0]).toMatchObject({
+      status: 'voting',
+      results: { votes: { n1: 0, n2: 0 }, firsts: { n1: 0, n2: 0 } },
+    });
+  });
+
+  it('precisa de pelo menos 2 indicações (R7)', () => {
+    const club = aClub({ members, rounds: [aRound({ nominations: nominations.slice(0, 1) })] });
+
+    expect(openVoting(club)).toEqual({ ok: false, error: 'not-enough-nominations' });
+  });
+
+  it('não abre o que não está em indicação', () => {
+    const club = aClub({ members, rounds: [aRound({ status: 'voting', nominations })] });
+
+    expect(openVoting(club)).toEqual({ ok: false, error: 'not-nominating' });
   });
 });

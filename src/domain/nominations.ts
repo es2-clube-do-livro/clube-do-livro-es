@@ -85,3 +85,22 @@ export function nominate(
   const nominations = [...round.nominations, { id, memberId, book: clean }];
   return ok(replaceRound(state, { ...round, nominations }));
 }
+
+export const MIN_NOMINATIONS = 2;
+
+export type OpenVotingError = 'not-nominating' | 'not-enough-nominations';
+
+/** R7: a votação abre com 2 ou mais indicações, e as indicações fecham. */
+export function openVoting(state: ClubState): Result<ClubState, OpenVotingError> {
+  const round = activeRound(state);
+  if (round?.status !== 'nominating') return err('not-nominating');
+  if (round.nominations.length < MIN_NOMINATIONS) return err('not-enough-nominations');
+  const zeros = Object.fromEntries(round.nominations.map((nomination) => [nomination.id, 0]));
+  return ok(
+    replaceRound(state, {
+      ...round,
+      status: 'voting',
+      results: { votes: { ...zeros }, firsts: { ...zeros } },
+    }),
+  );
+}
