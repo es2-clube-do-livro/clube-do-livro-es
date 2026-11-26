@@ -1,11 +1,13 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import { App } from '../../app/App';
+import type { CoverFinder } from '../../services/cover-finder';
 import { createMemoryRepository } from '../../storage/memory';
 import { aClub, aMember } from '../../test/factories';
+import { renderWithClub } from '../../test/render';
 import { StoredClub } from './StoredClub';
 
 function openClub(repository = createMemoryRepository()) {
@@ -44,4 +46,20 @@ it('R14: cancelar preserva os dados e confirmar remove todo o clube', async () =
   await user.click(within(dialog).getByRole('button', { name: 'Apagar' }));
   expect(repository.load().state).toEqual(aClub());
   expect(screen.getByRole('button', { name: 'Carregar exemplo' })).toBeVisible();
+});
+
+it('R15: busca a capa de cada livro do exemplo e mostra as que encontrar', async () => {
+  const findCover = vi.fn<CoverFinder>(({ title }) =>
+    Promise.resolve(title === 'Dom Casmurro' ? 'https://example.org/dom-casmurro.jpg' : null),
+  );
+  const { user } = renderWithClub(<App />, { findCover });
+
+  await user.click(screen.getByRole('button', { name: 'Carregar exemplo' }));
+
+  expect(await screen.findByRole('img', { name: 'Capa de Dom Casmurro' })).toHaveAttribute(
+    'src',
+    'https://example.org/dom-casmurro.jpg',
+  );
+  expect(findCover).toHaveBeenCalledTimes(3);
+  expect(screen.getAllByRole('img')).toHaveLength(1);
 });

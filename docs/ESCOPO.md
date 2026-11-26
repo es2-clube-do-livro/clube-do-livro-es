@@ -39,7 +39,8 @@ Como membro, quero indicar um livro para a rodada, para que o clube possa votar 
 - A indicação tem título e autor, com limites de tamanho (R4).
 - Cada membro indica no máximo um livro por rodada (R5).
 - O mesmo livro não entra duas vezes na rodada (R6).
-- O site busca a capa no Google Livros; sem capa, a indicação entra do mesmo jeito (R15).
+- O site busca a capa no Google Livros e, se não achar, na Open Library; sem capa, a indicação
+  entra do mesmo jeito (R15).
 - A lista mostra os livros, nunca quem indicou cada um.
 
 ### US03: Votar
@@ -105,7 +106,7 @@ Como organizador, quero que o clube continue lá quando eu voltar ao site.
 | R12   | O vencedor vira a leitura atual; concluir a leitura encerra a rodada.                                                                                                                             |
 | R13   | O histórico lista as rodadas concluídas, da mais recente para a mais antiga, sem dizer quem indicou o quê.                                                                                        |
 | R14   | O clube é salvo no navegador a cada mudança; dados inválidos são descartados com aviso.                                                                                                           |
-| R15   | Ao indicar, o site busca a capa no Google Livros pelo título e pelo autor; se a busca falhar ou não achar, a indicação entra sem capa.                                                            |
+| R15   | Ao indicar, o site busca a capa no Google Livros pelo título e pelo autor e, se não achar, na Open Library; se as buscas falharem ou não acharem, a indicação entra sem capa.                     |
 
 ## Decisões de escopo
 
@@ -120,7 +121,9 @@ mostrar como os testes sustentam a manutenção do código.
 | Sinopse e outros dados do livro            | Título, autor e capa bastam para votar.                                                                    |
 | Prazos e avanço automático das fases       | Quem organiza avança as fases pelos botões; menos estado para testar.                                      |
 
-A única chamada externa é a busca da capa (R15), que não usa chave e nunca bloqueia a indicação.
+A única chamada externa é a busca da capa (R15), que nunca bloqueia a indicação: primeiro no
+Google Livros, com a chave do projeto quando o build tem uma, e depois na Open Library, que não
+usa chave.
 Nos testes de unidade ela é trocada por um dublê, e nos testes e2e o Playwright intercepta a
 requisição, para nenhum teste depender da internet.
 

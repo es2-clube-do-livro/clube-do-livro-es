@@ -19,6 +19,13 @@ describe('coverSearchUrl', () => {
 
     expect(url.searchParams.get('q')).toBe('intitle:Dom Casmurro inauthor:Machado de Assis');
     expect(url.searchParams.get('maxResults')).toBe('1');
+    expect(url.searchParams.has('key')).toBe(false);
+  });
+
+  it('usa a chave do projeto quando o build tem uma', () => {
+    const url = new URL(coverSearchUrl(book, 'chave-de-teste'));
+
+    expect(url.searchParams.get('key')).toBe('chave-de-teste');
   });
 });
 
