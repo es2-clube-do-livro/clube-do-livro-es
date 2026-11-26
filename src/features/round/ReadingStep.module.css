@@ -1,0 +1,20 @@
+.book {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  overflow-wrap: anywhere;
+}
+
+.book h3,
+.book p {
+  margin: 0 0 var(--space-1);
+}
+
+.cover {
+  width: 5.5rem;
+  max-width: 30%;
+  max-height: 9rem;
+  object-fit: contain;
+  object-position: top left;
+}
