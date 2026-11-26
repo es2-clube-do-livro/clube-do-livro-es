@@ -37,8 +37,18 @@ em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
 ## Tecnologias
 
-React, TypeScript e Vite no site; Vitest, Testing Library e Playwright nos testes; GitHub
-Actions no CI/CD; Firebase Hosting na produção.
+- **React 19 e TypeScript (modo estrito):** a interface em componentes, com tipos em todo o
+  código. As regras do clube ficam em funções puras, separadas da interface.
+- **Vite:** servidor de desenvolvimento e build de produção.
+- **React Router:** as três abas (Rodada, Membros e Histórico).
+- **localStorage:** o clube fica salvo no navegador; não há servidor.
+- **Google Livros:** a API pública de onde vem a capa de cada indicação.
+- **Vitest, Testing Library e jsdom:** testes de unidade das regras e das telas.
+- **Playwright:** testes de ponta a ponta no build de produção.
+- **ESLint, Prettier, Husky e commitlint:** qualidade do código e padrão das mensagens de commit.
+- **GitHub Actions:** testes e cobertura em todo push, no Linux, no macOS e no Windows, e a
+  publicação em produção.
+- **Firebase Hosting:** a hospedagem do site, no plano gratuito.
 
 ## Execução dos testes
 

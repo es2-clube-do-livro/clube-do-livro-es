@@ -1,6 +1,6 @@
 import { activeRound, replaceRound } from './club';
 import { err, ok, type Result } from './result';
-import type { ClubState, NominationId, Round, Tally, Winner } from './types';
+import type { ClubState, DecisionMethod, NominationId, Round, Tally, Winner } from './types';
 
 export interface Standing {
   nominationId: NominationId;
@@ -33,27 +33,31 @@ function leaders(ids: readonly NominationId[], tally: Tally): NominationId[] {
   return ids.filter((id) => count(tally, id) === best);
 }
 
+/** Os critérios de desempate, na ordem da regra (R11): cada um fica só com os líderes. */
+const CRITERIA: readonly { method: DecisionMethod; tally: (round: Round) => Tally }[] = [
+  { method: 'votes', tally: (round) => round.results.votes },
+  { method: 'first-choices', tally: (round) => round.results.firsts },
+];
+
+/** O sorteio entre os que continuam empatados; `random` vai de 0 a 1. */
+function drawAmong(tied: readonly NominationId[], random: () => number): NominationId {
+  const drawn = tied[Math.min(Math.floor(random() * tied.length), tied.length - 1)];
+  if (drawn === undefined) throw new Error('A rodada não tem indicações para apurar.');
+  return drawn;
+}
+
 /**
  * A regra do clube (R11): vence quem tem mais votos; no empate, quem tem mais votos de
  * 1ª opção; se ainda empatar, `random` (de 0 a 1) sorteia entre os empatados.
  */
 export function decide(round: Round, random: () => number): Winner {
-  const byVotes = leaders(
-    round.nominations.map((nomination) => nomination.id),
-    round.results.votes,
-  );
-  const [mostVoted] = byVotes;
-  if (byVotes.length === 1 && mostVoted !== undefined) {
-    return { nominationId: mostVoted, method: 'votes' };
+  let tied = round.nominations.map((nomination) => nomination.id);
+  for (const { method, tally } of CRITERIA) {
+    tied = leaders(tied, tally(round));
+    const [only] = tied;
+    if (tied.length === 1 && only !== undefined) return { nominationId: only, method };
   }
-  const byFirsts = leaders(byVotes, round.results.firsts);
-  const [mostFirsts] = byFirsts;
-  if (byFirsts.length === 1 && mostFirsts !== undefined) {
-    return { nominationId: mostFirsts, method: 'first-choices' };
-  }
-  const drawn = byFirsts[Math.min(Math.floor(random() * byFirsts.length), byFirsts.length - 1)];
-  if (drawn === undefined) throw new Error('A rodada não tem indicações para apurar.');
-  return { nominationId: drawn, method: 'draw' };
+  return { nominationId: drawAmong(tied, random), method: 'draw' };
 }
 
 export type CloseError = 'not-voting' | 'no-ballots';
