@@ -53,7 +53,8 @@ jobs:
             cat coverage/summary.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-      - run: npm run build
+      - run: npx --no -- playwright install --with-deps chromium
+      - run: npm run test:e2e
 
   producao:
     name: Publicar no Firebase Hosting
