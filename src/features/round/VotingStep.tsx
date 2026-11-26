@@ -5,6 +5,7 @@ import { castBallot, type CastError } from '../../domain/ballot';
 import type { Member, NominationId } from '../../domain/types';
 import { Button } from '../../ui/Button';
 import { Ballot } from './Ballot';
+import { CloseVoting } from './CloseVoting';
 import type { StepProps } from './step-props';
 import styles from './VotingStep.module.css';
 
@@ -72,6 +73,7 @@ export function VotingStep({ round }: StepProps) {
               </li>
             ))}
           </ul>
+          <CloseVoting />
         </>
       )}
     </section>

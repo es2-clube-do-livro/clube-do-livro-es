@@ -62,4 +62,34 @@ describe('VotingStep', () => {
     expect(screen.queryByRole('button', { name: 'Votar como Ana' })).not.toBeInTheDocument();
     expect(screen.queryByText(/Vidas Secas/)).not.toBeInTheDocument();
   });
+
+  it('encerra a votação depois de confirmar e passa para a leitura', async () => {
+    const { user } = renderWithClub(<RoundPage />, { state: club });
+
+    await user.click(screen.getByRole('button', { name: 'Encerrar votação' }));
+    await user.click(screen.getByRole('button', { name: 'Encerrar' }));
+
+    expect(screen.getByRole('heading', { name: 'Rodada 1: leitura' })).toBeVisible();
+  });
+
+  it('continua a votação quando o encerramento é cancelado', async () => {
+    const { user } = renderWithClub(<RoundPage />, { state: club });
+
+    await user.click(screen.getByRole('button', { name: 'Encerrar votação' }));
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Rodada 1: votação' })).toBeVisible();
+  });
+
+  it('avisa que não dá para encerrar sem nenhum voto (R10)', async () => {
+    const [round] = club.rounds;
+    const noVotes = aClub({ ...club, rounds: round ? [{ ...round, voters: [] }] : [] });
+    const { user } = renderWithClub(<RoundPage />, { state: noVotes });
+
+    await user.click(screen.getByRole('button', { name: 'Encerrar votação' }));
+    await user.click(screen.getByRole('button', { name: 'Encerrar' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Ninguém votou ainda');
+  });
 });
