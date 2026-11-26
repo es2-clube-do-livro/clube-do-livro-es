@@ -27,3 +27,9 @@
   grid-column: 2;
   color: var(--color-muted);
 }
+
+.cover {
+  grid-row: 1 / span 2;
+  width: 3rem;
+  border-radius: 4px;
+}

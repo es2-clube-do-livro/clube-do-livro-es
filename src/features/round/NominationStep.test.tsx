@@ -135,4 +135,19 @@ describe('NominationStep', () => {
     expect(findCover).toHaveBeenCalledWith({ title: 'Dom Casmurro', author: 'Machado de Assis' });
     expect(await screen.findByText('Dom Casmurro')).toBeVisible();
   });
+
+  it('mostra a capa encontrada na lista de indicações', async () => {
+    const findCover: CoverFinder = () => Promise.resolve('https://capas.exemplo/dom-casmurro.jpg');
+    const { user } = renderWithClub(<RoundPage />, { state: club, findCover });
+
+    await user.selectOptions(screen.getByLabelText('Quem está indicando'), 'Ana');
+    await user.type(screen.getByLabelText('Título'), 'Dom Casmurro');
+    await user.type(screen.getByLabelText('Autor'), 'Machado de Assis');
+    await user.click(screen.getByRole('button', { name: 'Indicar' }));
+
+    expect(await screen.findByRole('img', { name: 'Capa de Dom Casmurro' })).toHaveAttribute(
+      'src',
+      'https://capas.exemplo/dom-casmurro.jpg',
+    );
+  });
 });

@@ -13,6 +13,9 @@ export function NominationList({ round }: StepProps) {
     <ul aria-label="Indicações da rodada" className={styles.list}>
       {round.nominations.map(({ id, book }) => (
         <li key={id} className={styles.book}>
+          {book.coverUrl && (
+            <img className={styles.cover} src={book.coverUrl} alt={`Capa de ${book.title}`} />
+          )}
           <span className={styles.title}>{book.title}</span>
           <span className={styles.author}>{book.author}</span>
         </li>
