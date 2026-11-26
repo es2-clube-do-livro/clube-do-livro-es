@@ -39,3 +39,16 @@ test('vota até sair o vencedor', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 3, name: 'Quarto de despejo' })).toBeVisible();
   await expect(page.getByText('Desempate pelos votos de 1ª opção.')).toBeVisible();
 });
+
+test('impede votar no próprio livro e votar duas vezes', async ({ page }) => {
+  await openSampleVoting(page);
+
+  await page.getByRole('button', { name: 'Votar como Ana' }).click();
+  const first = page.getByRole('group', { name: '1ª opção' });
+  await expect(first.getByRole('radio', { name: /^Dom Casmurro,/ })).toBeDisabled();
+  await page.getByRole('button', { name: 'Voltar' }).click();
+
+  await vote(page, 'Ana', ['Quarto de despejo', 'A hora da estrela']);
+  await expect(page.getByRole('button', { name: 'Votar como Ana' })).toHaveCount(0);
+  await expect(page.getByText('1 de 4 já votaram.')).toBeVisible();
+});
