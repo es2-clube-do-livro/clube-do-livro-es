@@ -47,6 +47,7 @@ it('lista primeiro a última leitura concluída pelo usuário, com vencedor e re
   const state = aClub({ members: [aMember('Ana'), aMember('Bia')], rounds: [older, reading] });
   const { user } = renderWithClub(<App />, { state });
   await user.click(screen.getByRole('button', { name: 'Concluir leitura' }));
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Concluir' }));
   await user.click(screen.getByRole('link', { name: 'Histórico' }));
 
   const list = screen.getByRole('list', { name: 'Leituras concluídas' });

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('abre o clube na aba Rodada e permite navegar pelas três abas', async ({ page }) => {
   await page.goto('/');
