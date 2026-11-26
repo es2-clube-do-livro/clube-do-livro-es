@@ -1,5 +1,6 @@
 import { useClub } from '../../app/club-context';
 import { EmptyState } from '../../ui/EmptyState';
+import { AddMemberForm } from './AddMemberForm';
 import styles from './MembersPage.module.css';
 
 export function MembersPage() {
@@ -8,6 +9,7 @@ export function MembersPage() {
   return (
     <section>
       <h2>Membros</h2>
+      <AddMemberForm />
       {state.members.length === 0 ? (
         <EmptyState title="Nenhum membro ainda">Adicione quem participa do clube.</EmptyState>
       ) : (

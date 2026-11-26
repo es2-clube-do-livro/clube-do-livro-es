@@ -21,4 +21,25 @@ describe('MembersPage', () => {
     expect(list.getByText('Ana')).toBeVisible();
     expect(list.getByText('Bia')).toBeVisible();
   });
+
+  it('adiciona um membro pelo formulário e limpa o campo', async () => {
+    const { user } = renderWithClub(<MembersPage />, { state: club });
+
+    await user.type(screen.getByLabelText('Nome'), '  Caio ');
+    await user.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    expect(within(screen.getByRole('list')).getByText('Caio')).toBeVisible();
+    expect(screen.getByLabelText('Nome')).toHaveValue('');
+  });
+
+  it('mostra o erro de nome repetido (R1)', async () => {
+    const { user } = renderWithClub(<MembersPage />, { state: club });
+
+    await user.type(screen.getByLabelText('Nome'), 'ana');
+    await user.click(screen.getByRole('button', { name: 'Adicionar' }));
+
+    expect(screen.getByLabelText('Nome')).toHaveAccessibleDescription(
+      'Já existe um membro com esse nome.',
+    );
+  });
 });
