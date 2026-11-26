@@ -1,11 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('mantém a rodada, os membros e a indicação depois de recarregar a página (R14)', async ({
   page,
 }) => {
-  await page.route('https://www.googleapis.com/books/v1/volumes**', (route) =>
-    route.fulfill({ json: { items: [] } }),
-  );
   await page.goto('/membros');
   const name = page.getByRole('textbox', { name: 'Nome' });
   const add = page.getByRole('button', { name: 'Adicionar' });
